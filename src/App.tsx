@@ -1,66 +1,98 @@
 import { useEffect, useState } from "react";
+import type { Session } from "@supabase/supabase-js";
 import Navbar from "./components/Navbar";
 import HomePage from "./pages/HomePage";
 import TasksPage from "./pages/TasksPage";
 import CalendarPage from "./pages/CalendarPage";
 import ChatPage from "./pages/ChatPage";
 import SettingsPage from "./pages/SettingsPage";
-import { mockTasks } from "./data/mockTasks";
+import AuthPage from "./pages/AuthPage";
 import type { Task } from "./types/task";
+import { supabase } from "./lib/supabase";
 import {
-  addTaskToDB,
-  deleteTaskFromDB,
-  getAllTasks,
-  saveAllTasksToDB,
-  updateTaskInDB,
-} from "./services/taskStorage";
+  getUserTasks,
+  addTaskToCloud,
+  updateTaskInCloud,
+  deleteTaskFromCloud,
+} from "./services/taskCloud";
 
 type Page = "home" | "tasks" | "calendar" | "chat" | "settings";
 
 export default function App() {
+  const [session, setSession] = useState<Session | null>(null);
+  const [authChecked, setAuthChecked] = useState(false);
   const [currentPage, setCurrentPage] = useState<Page>("home");
   const [tasks, setTasks] = useState<Task[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingTasks, setIsLoadingTasks] = useState(false);
 
+  // Check auth session on app load and listen for auth changes
   useEffect(() => {
-    const loadTasks = async () => {
-      try {
-        const savedTasks = await getAllTasks();
+    const loadSession = async () => {
+      const { data } = await supabase.auth.getSession();
+      setSession(data.session);
+      setAuthChecked(true);
+    };
 
-        if (savedTasks.length > 0) {
-          setTasks(savedTasks);
-        } else {
-          setTasks(mockTasks);
-          await saveAllTasksToDB(mockTasks);
-        }
+    loadSession();
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+      setAuthChecked(true);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  // Load tasks from Supabase for the logged-in user
+  useEffect(() => {
+    if (!authChecked) return;
+
+    if (!session) {
+      setTasks([]);
+      setIsLoadingTasks(false);
+      return;
+    }
+
+    const loadTasks = async () => {
+      setIsLoadingTasks(true);
+
+      try {
+        const data = await getUserTasks(session.user.id);
+        setTasks(data);
       } catch (error) {
-        console.error("Failed to load tasks from IndexedDB:", error);
-        setTasks(mockTasks);
+        console.error("Failed to load cloud tasks:", error);
       } finally {
-        setIsLoading(false);
+        setIsLoadingTasks(false);
       }
     };
 
     loadTasks();
-  }, []);
+  }, [session, authChecked]);
 
   const handleAddTask = async (newTask: Task) => {
-    setTasks((prevTasks) => [newTask, ...prevTasks]);
+    if (!session) return;
 
     try {
-      await addTaskToDB(newTask);
+      await addTaskToCloud(newTask, session.user.id);
+
+      const refreshedTasks = await getUserTasks(session.user.id);
+      setTasks(refreshedTasks);
     } catch (error) {
-      console.error("Failed to add task to DB:", error);
+      console.error("Failed to add task to cloud:", error);
     }
   };
 
   const handleDeleteTask = async (id: string) => {
-    setTasks((prevTasks) => prevTasks.filter((task) => task.id !== id));
+    if (!session) return;
 
     try {
-      await deleteTaskFromDB(id);
+      await deleteTaskFromCloud(id);
+
+      setTasks((prevTasks) => prevTasks.filter((task) => task.id !== id));
     } catch (error) {
-      console.error("Failed to delete task from DB:", error);
+      console.error("Failed to delete task from cloud:", error);
     }
   };
 
@@ -74,14 +106,14 @@ export default function App() {
       updatedAt: new Date().toISOString(),
     };
 
-    setTasks((prevTasks) =>
-      prevTasks.map((task) => (task.id === id ? updatedTask : task))
-    );
-
     try {
-      await updateTaskInDB(updatedTask);
+      await updateTaskInCloud(updatedTask);
+
+      setTasks((prevTasks) =>
+        prevTasks.map((task) => (task.id === id ? updatedTask : task))
+      );
     } catch (error) {
-      console.error("Failed to update task in DB:", error);
+      console.error("Failed to update task status in cloud:", error);
     }
   };
 
@@ -95,28 +127,28 @@ export default function App() {
       updatedAt: new Date().toISOString(),
     };
 
-    setTasks((prevTasks) =>
-      prevTasks.map((task) => (task.id === id ? updatedTask : task))
-    );
-
     try {
-      await updateTaskInDB(updatedTask);
+      await updateTaskInCloud(updatedTask);
+
+      setTasks((prevTasks) =>
+        prevTasks.map((task) => (task.id === id ? updatedTask : task))
+      );
     } catch (error) {
-      console.error("Failed to set task status in DB:", error);
+      console.error("Failed to set task status in cloud:", error);
     }
   };
 
   const handleUpdateTask = async (updatedTask: Task) => {
-    setTasks((prevTasks) =>
-      prevTasks.map((task) =>
-        task.id === updatedTask.id ? updatedTask : task
-      )
-    );
-
     try {
-      await updateTaskInDB(updatedTask);
+      await updateTaskInCloud(updatedTask);
+
+      setTasks((prevTasks) =>
+        prevTasks.map((task) =>
+          task.id === updatedTask.id ? updatedTask : task
+        )
+      );
     } catch (error) {
-      console.error("Failed to update task in DB:", error);
+      console.error("Failed to update task in cloud:", error);
     }
   };
 
@@ -146,16 +178,32 @@ export default function App() {
           />
         );
       case "settings":
-        return <SettingsPage />;
+        return <SettingsPage userEmail={session.user.email} />;
       default:
         return <HomePage tasks={tasks} />;
     }
   };
 
-  if (isLoading) {
+  if (!authChecked) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gray-50 text-gray-700">
-        Loading GLacs...
+        Checking session...
+      </div>
+    );
+  }
+
+  if (!session) {
+    return (
+      <div className="min-h-screen bg-gray-50 p-6">
+        <AuthPage />
+      </div>
+    );
+  }
+
+  if (isLoadingTasks) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gray-50 text-gray-700">
+        Loading your tasks...
       </div>
     );
   }
