@@ -213,7 +213,6 @@ export default function ChatPage({
       ? "rounded-[28px] border border-white/10 bg-gradient-to-br from-slate-900 to-slate-950 p-6 shadow-lg"
       : "rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm";
 
-  const mutedTextClass = theme === "dark" ? "text-slate-400" : "text-slate-500";
   const bodyTextClass = theme === "dark" ? "text-slate-300" : "text-slate-600";
   const textClass = theme === "dark" ? "text-white" : "text-slate-900";
 
