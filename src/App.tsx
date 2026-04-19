@@ -9,6 +9,7 @@ import SettingsPage from "./pages/SettingsPage";
 import AuthPage from "./pages/AuthPage";
 import type { Task } from "./types/task";
 import { supabase } from "./lib/supabase";
+import { useTheme } from "./context/ThemeContext";
 import {
   getUserTasks,
   addTaskToCloud,
@@ -19,13 +20,14 @@ import {
 type Page = "home" | "tasks" | "calendar" | "chat" | "settings";
 
 export default function App() {
+  const { theme } = useTheme();
+
   const [session, setSession] = useState<Session | null>(null);
   const [authChecked, setAuthChecked] = useState(false);
   const [currentPage, setCurrentPage] = useState<Page>("home");
   const [tasks, setTasks] = useState<Task[]>([]);
   const [isLoadingTasks, setIsLoadingTasks] = useState(false);
 
-  // Check auth session on app load and listen for auth changes
   useEffect(() => {
     const loadSession = async () => {
       const { data } = await supabase.auth.getSession();
@@ -45,7 +47,6 @@ export default function App() {
     return () => subscription.unsubscribe();
   }, []);
 
-  // Load tasks from Supabase for the logged-in user
   useEffect(() => {
     if (!authChecked) return;
 
@@ -89,7 +90,6 @@ export default function App() {
 
     try {
       await deleteTaskFromCloud(id);
-
       setTasks((prevTasks) => prevTasks.filter((task) => task.id !== id));
     } catch (error) {
       console.error("Failed to delete task from cloud:", error);
@@ -186,7 +186,13 @@ export default function App() {
 
   if (!authChecked) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gray-50 text-gray-700">
+      <div
+        className={`flex min-h-screen items-center justify-center ${
+          theme === "dark"
+            ? "bg-slate-950 text-slate-200"
+            : "bg-slate-100 text-slate-900"
+        }`}
+      >
         Checking session...
       </div>
     );
@@ -194,7 +200,13 @@ export default function App() {
 
   if (!session) {
     return (
-      <div className="min-h-screen bg-gray-50 p-6">
+      <div
+        className={`min-h-screen p-6 ${
+          theme === "dark"
+            ? "bg-slate-950 text-white"
+            : "bg-slate-100 text-slate-900"
+        }`}
+      >
         <AuthPage />
       </div>
     );
@@ -202,18 +214,36 @@ export default function App() {
 
   if (isLoadingTasks) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gray-50 text-gray-700">
+      <div
+        className={`flex min-h-screen items-center justify-center ${
+          theme === "dark"
+            ? "bg-slate-950 text-slate-200"
+            : "bg-slate-100 text-slate-900"
+        }`}
+      >
         Loading your tasks...
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900">
+    <div
+      className={`min-h-screen ${
+        theme === "dark"
+          ? "bg-slate-950 text-white"
+          : "bg-slate-100 text-slate-900"
+      }`}
+    >
       <Navbar currentPage={currentPage} onNavigate={setCurrentPage} />
 
-      <main className="mx-auto max-w-6xl px-4 py-8">
-        <div className="rounded-2xl bg-white p-6 shadow-sm">
+      <main className="mx-auto max-w-6xl px-4 py-8 pb-32">
+        <div
+          className={`rounded-[32px] p-6 shadow-none backdrop-blur-sm ${
+            theme === "dark"
+              ? "border border-white/10 bg-slate-950/80"
+              : "border border-slate-200 bg-white"
+          }`}
+        >
           {renderPage()}
         </div>
       </main>

@@ -2,12 +2,22 @@
 
 :root {
   font-family: Inter, system-ui, Arial, sans-serif;
-  color: #111827;
-  background-color: #f9fafb;
 }
 
-body {
+html,
+body,
+#root {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
+}
+
+html[data-theme="dark"] body {
+  background-color: #020617;
+  color: #f8fafc;
+}
+
+html[data-theme="light"] body {
+  background-color: #f8fafc;
+  color: #0f172a;
 }
