@@ -178,7 +178,7 @@ export default function App() {
           />
         );
       case "settings":
-        return <SettingsPage userEmail={session.user.email} />;
+        return <SettingsPage userEmail={session?.user?.email ?? ""} />;
       default:
         return <HomePage tasks={tasks} />;
     }
