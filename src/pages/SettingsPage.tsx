@@ -173,21 +173,12 @@ export default function SettingsPage({ userEmail }: SettingsPageProps) {
                   : "border-slate-200 bg-white hover:bg-slate-100"
               }`}
             >
-              <p
-                className={`text-sm ${
-                  theme === "dark"
-                    ? "text-slate-400"
-                    : mutedTextClass
-                }`}
-              >
+              <p className={`text-sm ${mutedTextClass}`}>
                 Theme
               </p>
               <h3 className="mt-2 text-lg font-semibold">Light Mode</h3>
-              <p
-                className={`mt-2 text-sm ${
-                  theme === "dark" ? "text-slate-400" : bodyTextClass
-                }`}
-              >
+              
+              <p className={`mt-2 text-sm ${bodyTextClass}`}>
                 A cleaner bright layout for daytime use.
               </p>
             </button>
