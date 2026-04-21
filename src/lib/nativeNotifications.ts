@@ -2,7 +2,6 @@ import { LocalNotifications } from "@capacitor/local-notifications";
 import type { Task } from "../types/task";
 
 function taskToNotificationId(task: Task) {
-  // deterministic numeric id from task id
   let hash = 0;
   for (let i = 0; i < task.id.length; i++) {
     hash = (hash * 31 + task.id.charCodeAt(i)) | 0;
@@ -27,8 +26,6 @@ export async function scheduleTaskReminder(task: Task) {
 
   const at = new Date(task.reminder);
   if (Number.isNaN(at.getTime())) return;
-
-  // ignore past reminders
   if (at.getTime() <= Date.now()) return;
 
   const id = taskToNotificationId(task);
