@@ -10,6 +10,8 @@ import AuthPage from "./pages/AuthPage";
 import type { Task } from "./types/task";
 import { supabase } from "./lib/supabase";
 import { useTheme } from "./context/ThemeContext";
+import { startReminderEngine } from "./lib/reminderEngine";
+import { syncAllTaskReminders } from "./lib/nativeNotifications";
 import {
   getUserTasks,
   addTaskToCloud,
@@ -61,6 +63,7 @@ export default function App() {
 
       try {
         const data = await getUserTasks(session.user.id);
+        console.log("Loaded tasks from cloud:", data);
         setTasks(data);
       } catch (error) {
         console.error("Failed to load cloud tasks:", error);
@@ -71,6 +74,17 @@ export default function App() {
 
     loadTasks();
   }, [session, authChecked]);
+
+  useEffect(() => {
+    if (!session) return;
+    if (tasks.length === 0) return;
+    void syncAllTaskReminders(tasks);
+    const stopReminderEngine = startReminderEngine(tasks);
+
+    return () => {
+      stopReminderEngine();
+    };
+  }, [tasks, session]);
 
   const handleAddTask = async (newTask: Task) => {
     if (!session) return;
@@ -117,7 +131,10 @@ export default function App() {
     }
   };
 
-  const handleSetTaskStatus = async (id: string, status: "done" | "pending") => {
+  const handleSetTaskStatus = async (
+    id: string,
+    status: "done" | "pending"
+  ) => {
     const targetTask = tasks.find((task) => task.id === id);
     if (!targetTask) return;
 

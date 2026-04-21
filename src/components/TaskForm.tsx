@@ -24,6 +24,7 @@ export default function TaskForm({
   const [time, setTime] = useState("");
   const [category, setCategory] = useState("General");
   const [priority, setPriority] = useState<Priority>("medium");
+  const [reminder, setReminder] = useState("");
 
   useEffect(() => {
     if (editingTask) {
@@ -32,12 +33,14 @@ export default function TaskForm({
       setTime(editingTask.time || "");
       setCategory(editingTask.category || "General");
       setPriority(editingTask.priority);
+      setReminder(editingTask.reminder || "");
     } else {
       setTitle("");
       setDate("");
       setTime("");
       setCategory("General");
       setPriority("medium");
+      setReminder("");
     }
   }, [editingTask]);
 
@@ -57,6 +60,7 @@ export default function TaskForm({
         time,
         category,
         priority,
+        reminder: reminder || null,
         updatedAt: new Date().toISOString(),
       };
 
@@ -71,6 +75,7 @@ export default function TaskForm({
       time,
       category,
       priority,
+      reminder: reminder || null,
       status: "pending",
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
@@ -83,6 +88,7 @@ export default function TaskForm({
     setTime("");
     setCategory("General");
     setPriority("medium");
+    setReminder("");
   };
 
   const inputClass =
@@ -90,12 +96,19 @@ export default function TaskForm({
       ? "w-full rounded-2xl border border-white/10 bg-slate-900 px-4 py-3 text-white outline-none placeholder:text-slate-500 focus:border-teal-400/40"
       : "w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none placeholder:text-slate-400 focus:border-teal-400/40";
 
-  const mutedTextClass = theme === "dark" ? "text-slate-300" : "text-slate-600";
+  const mutedTextClass =
+    theme === "dark" ? "text-slate-300" : "text-slate-600";
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
       <div className="flex items-center justify-between">
-        <h2 className={theme === "dark" ? "text-lg font-semibold text-white" : "text-lg font-semibold text-slate-900"}>
+        <h2
+          className={
+            theme === "dark"
+              ? "text-lg font-semibold text-white"
+              : "text-lg font-semibold text-slate-900"
+          }
+        >
           {editingTask ? "Update Task Details" : "Task Details"}
         </h2>
 
@@ -151,6 +164,21 @@ export default function TaskForm({
             className={inputClass}
           />
         </div>
+      </div>
+
+      <div>
+        <label className={`mb-2 block text-sm font-medium ${mutedTextClass}`}>
+          Reminder
+        </label>
+        <input
+          type="datetime-local"
+          value={reminder}
+          onChange={(e) => setReminder(e.target.value)}
+          className={inputClass}
+        />
+        <p className={`mt-2 text-xs ${theme === "dark" ? "text-slate-400" : "text-slate-500"}`}>
+          Optional. Set the exact date and time when you want to be reminded.
+        </p>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2">

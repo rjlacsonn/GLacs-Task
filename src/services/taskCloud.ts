@@ -13,12 +13,12 @@ export async function getUserTasks(userId: string): Promise<Task[]> {
   return (data ?? []).map((task) => ({
     id: task.id,
     title: task.title,
-    description: task.description ?? "",
     date: task.date,
     time: task.time ?? "",
-    priority: task.priority,
     category: task.category,
+    priority: task.priority,
     status: task.status,
+    reminder: task.reminder ?? null,
     createdAt: task.created_at,
     updatedAt: task.updated_at,
   }));
@@ -29,12 +29,12 @@ export async function addTaskToCloud(task: Task, userId: string) {
     {
       user_id: userId,
       title: task.title,
-      description: task.description ?? "",
       date: task.date,
       time: task.time ?? "",
-      priority: task.priority,
       category: task.category,
+      priority: task.priority,
       status: task.status,
+      reminder: task.reminder ?? null,
     },
   ]);
 
@@ -46,12 +46,12 @@ export async function updateTaskInCloud(task: Task) {
     .from("tasks")
     .update({
       title: task.title,
-      description: task.description ?? "",
       date: task.date,
       time: task.time ?? "",
-      priority: task.priority,
       category: task.category,
+      priority: task.priority,
       status: task.status,
+      reminder: task.reminder ?? null,
       updated_at: new Date().toISOString(),
     })
     .eq("id", task.id);

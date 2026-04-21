@@ -5,6 +5,7 @@ import {
   requestNotificationPermission,
   showTestNotification,
 } from "../lib/notifications";
+import { requestNativeNotificationPermission } from "../lib/nativeNotifications";
 import { useTheme } from "../context/ThemeContext";
 
 type SettingsPageProps = {
@@ -34,8 +35,27 @@ export default function SettingsPage({ userEmail }: SettingsPageProps) {
     setIsRequesting(true);
 
     try {
-      const result = await requestNotificationPermission();
-      setPermission(result);
+      const webResult = await requestNotificationPermission().catch(() => null);
+      const nativeResult = await requestNativeNotificationPermission().catch(
+        () => null
+      );
+
+      const finalPermission =
+        webResult === "granted" || nativeResult === "granted"
+          ? "granted"
+          : webResult ?? nativeResult ?? "default";
+
+      setPermission(finalPermission);
+
+      if (finalPermission === "granted") {
+        alert("Notifications enabled successfully.");
+      } else if (finalPermission === "denied") {
+        alert(
+          "Notifications were blocked. Please allow them in your device or browser settings."
+        );
+      } else {
+        alert("Notification permission was dismissed.");
+      }
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "Failed to request permission.";
@@ -94,7 +114,11 @@ export default function SettingsPage({ userEmail }: SettingsPageProps) {
     theme === "dark" ? "text-slate-300" : "text-slate-600";
 
   return (
-    <div className={`space-y-8 ${theme === "dark" ? "text-white" : "text-slate-900"}`}>
+    <div
+      className={`space-y-8 ${
+        theme === "dark" ? "text-white" : "text-slate-900"
+      }`}
+    >
       {/* Header */}
       <section
         className={
@@ -104,7 +128,13 @@ export default function SettingsPage({ userEmail }: SettingsPageProps) {
         }
       >
         <div>
-          <p className={theme === "dark" ? "text-sm text-teal-300/80" : "text-sm text-teal-700"}>
+          <p
+            className={
+              theme === "dark"
+                ? "text-sm text-teal-300/80"
+                : "text-sm text-teal-700"
+            }
+          >
             Settings
           </p>
           <h1 className="mt-2 text-4xl font-semibold tracking-tight">
@@ -173,12 +203,19 @@ export default function SettingsPage({ userEmail }: SettingsPageProps) {
                   : "border-slate-200 bg-white hover:bg-slate-100"
               }`}
             >
-              <p className={`text-sm ${mutedTextClass}`}>
+              <p
+                className={`text-sm ${
+                  theme === "dark" ? "text-slate-400" : mutedTextClass
+                }`}
+              >
                 Theme
               </p>
               <h3 className="mt-2 text-lg font-semibold">Light Mode</h3>
-              
-              <p className={`mt-2 text-sm ${bodyTextClass}`}>
+              <p
+                className={`mt-2 text-sm ${
+                  theme === "dark" ? "text-slate-400" : bodyTextClass
+                }`}
+              >
                 A cleaner bright layout for daytime use.
               </p>
             </button>
@@ -190,7 +227,7 @@ export default function SettingsPage({ userEmail }: SettingsPageProps) {
       <section className={sectionClass}>
         <h2 className="text-2xl font-semibold">Notifications</h2>
         <p className={`mt-1 text-sm ${mutedTextClass}`}>
-          Enable reminders and test browser notifications.
+          Enable reminders and test browser or device notifications.
         </p>
 
         <div className="mt-6 flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
@@ -247,7 +284,8 @@ export default function SettingsPage({ userEmail }: SettingsPageProps) {
             <div className={innerCardClass}>
               <h3 className="font-medium">Need help?</h3>
               <p className={`mt-2 text-sm ${mutedTextClass}`}>
-                You can add an FAQ page, support email, or contact section here later.
+                You can add an FAQ page, support email, or contact section here
+                later.
               </p>
             </div>
           </div>
@@ -263,14 +301,16 @@ export default function SettingsPage({ userEmail }: SettingsPageProps) {
             <div className={innerCardClass}>
               <h3 className="font-medium">Privacy Policy</h3>
               <p className={`mt-2 text-sm ${mutedTextClass}`}>
-                Your data is stored securely and used only for your productivity features.
+                Your data is stored securely and used only for your productivity
+                features.
               </p>
             </div>
 
             <div className={innerCardClass}>
               <h3 className="font-medium">Terms of Use</h3>
               <p className={`mt-2 text-sm ${mutedTextClass}`}>
-                GLacs is intended to help users manage tasks, reminders, and schedules responsibly.
+                GLacs is intended to help users manage tasks, reminders, and
+                schedules responsibly.
               </p>
             </div>
           </div>
@@ -288,7 +328,8 @@ export default function SettingsPage({ userEmail }: SettingsPageProps) {
           <div className={`mt-6 ${innerCardClass}`}>
             <p className={`text-sm ${bodyTextClass}`}>
               GLacs is a personal AI productivity app designed to help users
-              track tasks, organize schedules, and avoid forgetting important things.
+              track tasks, organize schedules, and avoid forgetting important
+              things.
             </p>
 
             <div className="mt-5 flex flex-wrap gap-3">
@@ -302,7 +343,7 @@ export default function SettingsPage({ userEmail }: SettingsPageProps) {
                     : "border border-slate-200 bg-slate-50 text-slate-700"
                 }`}
               >
-                React + Supabase
+                React + Supabase + Capacitor
               </span>
             </div>
           </div>
@@ -317,7 +358,8 @@ export default function SettingsPage({ userEmail }: SettingsPageProps) {
           <div className="mt-6 rounded-3xl border border-rose-400/15 bg-rose-500/10 p-5">
             <h3 className="font-medium">Logout from your account</h3>
             <p className={`mt-2 text-sm ${bodyTextClass}`}>
-              You can sign out safely and switch to a different account anytime.
+              You can sign out safely and switch to a different account
+              anytime.
             </p>
 
             <button
